@@ -7,12 +7,15 @@ npm run dev
 open http://localhost:3000
 ```
 
-## Telegram echo bot
+## Telegram AI bot
 
-Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET` on the web service. The
+Set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, and
+`GOOGLE_GENERATIVE_AI_API_KEY` on the web service. The
 secret must be 1–256 characters containing only letters, numbers, `_`, or `-`.
-The bot accepts Telegram updates at `POST /telegram/webhook` and copies each
-incoming message back to its chat (including text and supported media).
+The bot accepts Telegram updates at `POST /telegram/webhook`, uses the AI SDK
+with Google's `gemini-2.5-flash-lite` to generate a reply for incoming text or
+media captions, and sends the reply to the same chat. Messages without text or
+a caption are ignored.
 
 After deploying, register the HTTPS endpoint with Telegram using `setWebhook`.
 Run the following with the same token and secret available in your local shell;
@@ -33,5 +36,5 @@ console.log('Telegram webhook registered')
 JS
 ```
 
-Telegram's `copyMessage` does not support service messages, paid media,
-giveaways, or invoices; these cannot be echoed by this bot.
+The bot token and webhook secret must match the values configured on Render;
+the Google API key must also be configured there for AI replies to work.
