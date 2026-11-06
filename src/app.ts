@@ -25,7 +25,7 @@ export function createApp(generateReply: (prompt: string) => Promise<string> = a
     import('ai')
   ])
   const { text } = await generateText({
-    model: google('gemini-2.5-flash-lite'),
+    model: google('gemini-3.5-flash-lite'),
     prompt,
     maxOutputTokens: 512
   })
@@ -80,12 +80,17 @@ export function createApp(generateReply: (prompt: string) => Promise<string> = a
       return c.text('AI not configured', 503)
     }
 
-    let reply: string
+    let reply = 'Sorry, I could not generate a reply right now. Please try again later.'
     try {
-      reply = await generateReply(prompt)
-      if (!reply.trim()) return c.text('AI generation failed', 502)
-    } catch {
-      return c.text('AI generation failed', 502)
+      const generated = await generateReply(prompt)
+      if (generated.trim()) reply = generated
+      else console.error('AI generation returned an empty reply')
+    } catch (error) {
+      // Do not log prompts, credentials, or raw provider error messages.
+      console.error('AI generation failed', {
+        name: error instanceof Error ? error.name : 'UnknownError',
+        statusCode: typeof error === 'object' && error !== null && 'statusCode' in error ? error.statusCode : undefined
+      })
     }
 
     const payload = {

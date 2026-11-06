@@ -13,9 +13,10 @@ Set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, and
 `GOOGLE_GENERATIVE_AI_API_KEY` on the web service. The
 secret must be 1–256 characters containing only letters, numbers, `_`, or `-`.
 The bot accepts Telegram updates at `POST /telegram/webhook`, uses the AI SDK
-with Google's `gemini-2.5-flash-lite` to generate a reply for incoming text or
+with Google's `gemini-3.5-flash-lite` to generate a reply for incoming text or
 media captions, and sends the reply to the same chat. Messages without text or
-a caption are ignored.
+a caption are ignored. If AI generation fails, the bot sends a short fallback
+message instead of silently leaving the chat unanswered.
 
 After deploying, register the HTTPS endpoint with Telegram using `setWebhook`.
 Run the following with the same token and secret available in your local shell;

@@ -21,6 +21,8 @@ test('Telegram webhook generates and sends an AI reply to text and captions', as
   })
   const calls: { url: string; body: Record<string, unknown> }[] = []
   let telegramOk = true
+  const errors: unknown[][] = []
+  t.mock.method(console, 'error', (...args: unknown[]) => { errors.push(args) })
   t.mock.method(globalThis, 'fetch', async (url: string | URL | Request, init?: RequestInit) => {
     calls.push({ url: String(url), body: JSON.parse(String(init?.body)) })
     return new Response(JSON.stringify({ ok: telegramOk }), { status: telegramOk ? 200 : 400 })
@@ -64,8 +66,12 @@ test('Telegram webhook generates and sends an AI reply to text and captions', as
     assert.equal(calls.length, 2)
 
     generationFails = true
-    assert.equal((await request({ message: { chat: { id: 123 }, message_id: 10, text: 'hi' } })).status, 502)
-    assert.equal(calls.length, 2)
+    assert.equal((await request({ message: { chat: { id: 123 }, message_id: 10, text: 'hi' } })).status, 200)
+    assert.deepEqual(calls[2]?.body, {
+      chat_id: 123, text: 'Sorry, I could not generate a reply right now. Please try again later.'
+    })
+    assert.equal(errors[0]?.[0], 'AI generation failed')
+    assert.equal(JSON.stringify(errors).includes('Google API failed'), false)
     generationFails = false
 
     telegramOk = false
