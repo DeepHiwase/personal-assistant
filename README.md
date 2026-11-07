@@ -39,3 +39,14 @@ JS
 
 The bot token and webhook secret must match the values configured on Render;
 the Google API key must also be configured there for AI replies to work.
+
+## Trigger.dev (development)
+
+The `hello-world` background task is defined in `src/trigger/hello-world.ts`
+for Trigger.dev project `proj_utbtedsfgmvhrluuxces`. Log in with
+`npx trigger.dev@latest login`, then add the **Development** environment's
+`TRIGGER_SECRET_KEY` to the ignored local `.env` file. Start the task worker
+from the repository root with `npx trigger.dev@latest dev`. In the Trigger.dev
+Development dashboard, open **Tasks → hello-world → Test**, supply
+`{"name":"World"}` as the payload, and run the test. The task returns
+`{"message":"Hello, World!"}`.
