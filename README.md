@@ -50,3 +50,21 @@ from the repository root with `npx trigger.dev@latest dev`. In the Trigger.dev
 Development dashboard, open **Tasks → hello-world → Test**, supply
 `{"name":"World"}` as the payload, and run the test. The task returns
 `{"message":"Hello, World!"}`.
+
+`npm run dev` loads the ignored `.env` into the local Hono process. If you run
+the compiled app with `npm start` instead, export your variables first (or use
+`node --env-file=.env dist/index.js`).
+
+## Temporary public AI test
+
+The `ai-test` Trigger.dev task uses the AI SDK with `gemini-3.5-flash-lite`
+and a fixed prompt. With the Trigger.dev dev worker running and both
+`TRIGGER_SECRET_KEY` (Development key) and `GOOGLE_GENERATIVE_AI_API_KEY` set
+in the task environment, visit `GET /test/ai` to enqueue a run. The response
+contains a `statusUrl` such as `/test/ai/run_...`; GET that URL to see its
+status, then the generated `text` when complete. These routes are unauthenticated
+and incur API charges on every run; remove them after testing. Do not use a
+Development Trigger.dev key for a public production deployment: deploy the
+task to Trigger.dev production and use a production key there first.
+Render does not read your local `.env` file: configure its own production
+`TRIGGER_SECRET_KEY` after deploying the task to Trigger.dev production.

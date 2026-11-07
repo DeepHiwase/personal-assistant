@@ -1,5 +1,36 @@
 import { createHash, timingSafeEqual } from 'node:crypto'
 import { Hono } from 'hono'
+import type { aiTestTask } from './trigger/ai-test.js'
+
+type AiTestRun = {
+  taskIdentifier: string
+  status: string
+  isCompleted: boolean
+  output?: { text: string }
+}
+
+type AiTestClient = {
+  trigger: () => Promise<string>
+  retrieve: (runId: string) => Promise<AiTestRun>
+}
+
+const aiTestClient: AiTestClient = {
+  trigger: async () => {
+    const { tasks } = await import('@trigger.dev/sdk')
+    const handle = await tasks.trigger<typeof aiTestTask>('ai-test', undefined)
+    return handle.id
+  },
+  retrieve: async (runId) => {
+    const { runs } = await import('@trigger.dev/sdk')
+    const run = await runs.retrieve<typeof aiTestTask>(runId)
+    return {
+      taskIdentifier: run.taskIdentifier,
+      status: run.status,
+      isCompleted: run.isCompleted,
+      output: run.output
+    }
+  }
+}
 
 type TelegramMessage = {
   chat?: { id?: number }
@@ -30,7 +61,7 @@ export function createApp(generateReply: (prompt: string) => Promise<string> = a
     maxOutputTokens: 512
   })
   return text
-}) {
+}, testClient: AiTestClient = aiTestClient) {
   const app = new Hono()
 
   app.get('/', (c) => {
@@ -39,6 +70,37 @@ export function createApp(generateReply: (prompt: string) => Promise<string> = a
 
   app.get('/marco', (c) => {
     return c.text('polo')
+  })
+
+  // Temporary public smoke test. Keep the prompt fixed to avoid accepting arbitrary AI workloads.
+  app.get('/test/ai', async (c) => {
+    c.header('Cache-Control', 'no-store')
+    if (!process.env.TRIGGER_SECRET_KEY) return c.json({ error: 'TRIGGER_SECRET_KEY missing from server environment' }, 503)
+
+    try {
+      const runId = await testClient.trigger()
+      return c.json({ runId, statusUrl: `/test/ai/${runId}` }, 202)
+    } catch {
+      return c.json({ error: 'Could not start AI test' }, 502)
+    }
+  })
+
+  app.get('/test/ai/:runId', async (c) => {
+    c.header('Cache-Control', 'no-store')
+    if (!process.env.TRIGGER_SECRET_KEY) return c.json({ error: 'TRIGGER_SECRET_KEY missing from server environment' }, 503)
+
+    const runId = c.req.param('runId')
+    if (!/^run_[A-Za-z0-9_-]{4,128}$/.test(runId)) return c.json({ error: 'Invalid run ID' }, 400)
+
+    try {
+      const run = await testClient.retrieve(runId)
+      if (run.taskIdentifier !== 'ai-test') return c.json({ error: 'Run not found' }, 404)
+      if (!run.isCompleted) return c.json({ status: run.status }, 202)
+      if (!run.output?.text) return c.json({ status: run.status, error: 'AI test failed' }, 502)
+      return c.json({ status: run.status, text: run.output.text })
+    } catch {
+      return c.json({ error: 'Could not retrieve AI test' }, 502)
+    }
   })
 
   app.post('/telegram/webhook', async (c) => {
