@@ -2,6 +2,15 @@
 
 Run `npx hono --help` first, and use the CLI instead of a dev server.
 
+## Render environment-variable sync
+
+When syncing variables from the local `.env` to Render, **always exclude
+`TRIGGER_SECRET_KEY`**. The local value is for Trigger.dev development and must
+never be copied to production, even when asked to sync *all* variables.
+Never overwrite or delete Render's existing `TRIGGER_SECRET_KEY` during a sync;
+production Trigger.dev credentials must be configured separately from a
+production key. Preserve all other Render variables outside the requested sync.
+
 <!-- TRIGGER.DEV SKILLS START -->
 ## Trigger.dev agent skills
 
